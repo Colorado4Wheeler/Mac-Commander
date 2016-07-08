@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<Actions>
+	<SupportURL>http://forums.indigodomo.com/viewtopic.php?f=196&amp;t=16129</SupportURL>
+	<Action id="turnOn" deviceFilter="self">
+		<Name>Turn on</Name>
+		<CallbackMethod>deviceAction</CallbackMethod>
+	</Action>
+	
+	<Action id="turnOff" deviceFilter="self">
+		<Name>Turn off</Name>
+		<CallbackMethod>deviceAction</CallbackMethod>
+	</Action>
+	
+	<Action id="toggle" deviceFilter="self">
+		<Name>Toggle on/off</Name>
+		<CallbackMethod>deviceAction</CallbackMethod>
+	</Action>
+</Actions>
