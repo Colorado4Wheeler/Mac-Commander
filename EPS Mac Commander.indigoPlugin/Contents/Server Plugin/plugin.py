@@ -3,7 +3,7 @@
 
 """plugin.py: Mac Commander plugin."""
 
-__version__ 	= "2.0.0-b1"
+__version__ 	= "2.0.0"
 
 __modname__		= "Mac Commander"
 __author__ 		= "ColoradoFourWheeler"
@@ -19,6 +19,7 @@ import os
 import sys
 import time
 import datetime
+from datetime import datetime, timedelta, time
 from subprocess import Popen, PIPE
 import applescript
 import glob
@@ -27,6 +28,9 @@ import re
 # Third Party Modules
 import indigo
 
+# Package Modules
+from lib.eps import ex
+from lib.eps import version
 
 class Plugin(indigo.PluginBase):
 
@@ -43,6 +47,8 @@ class Plugin(indigo.PluginBase):
 		self.pollinglist = {}
 		self.auditpolling = 0
 		self.itunespollinglist = {} # 1.1.0
+		self.next_version_check = datetime.now() + timedelta(days=7)
+		version.version_check(self)
 		
 	###
 	def __del__(self):
@@ -72,12 +78,16 @@ class Plugin(indigo.PluginBase):
 	def runConcurrentThread(self):
 		try:
 			while True:
-					# Since we sleep for 1 second we can use this as crude 1 second timer
-					if len(self.pollinglist) > 0:
-						self.pollingTick()
-						self.pollingTickMusic()
-			
-					self.sleep(1)
+				# Since we sleep for 1 second we can use this as crude 1 second timer
+				if len(self.pollinglist) > 0:
+					self.pollingTick()
+					self.pollingTickMusic()
+		
+				self.sleep(1)
+					
+				if self.next_version_check < datetime.now():
+					version.version_check(self)
+					
 		except self.StopThread:
 			pass	# Optionally catch the StopThread exception and do any needed cleanup.
 			
@@ -88,31 +98,38 @@ class Plugin(indigo.PluginBase):
 			
 	###
 	def validateDeviceConfigUi (self, valuesDict, typeId, devId):
-		errorDict = indigo.Dict()
-		dev = indigo.devices[devId]
+		try:
+			errorDict = indigo.Dict()
+			dev = indigo.devices[devId]
 		
-		# While we are here add this device to polling if that is enabled
-		self.configurePolling (dev, valuesDict)
-		self.configurePollingMusic (dev, valuesDict)
-		#indigo.server.log(unicode(self.itunespollinglist))
+			# While we are here add this device to polling if that is enabled
+			self.configurePolling (dev, valuesDict)
+			self.configurePollingMusic (dev, valuesDict)
+			#indigo.server.log(unicode(self.itunespollinglist))
 		
-		return (True, valuesDict, errorDict)	
+			return (True, valuesDict, errorDict)	
+		
+		except Exception as e:
+			self.logger.error (ex.stack_trace(e))	
 		
 	###
 	def actionControlDevice(self, action, dev):
-		if dev.deviceTypeId == 'maccmd':
-			if action.deviceAction == indigo.kDimmerRelayAction.TurnOn:
-				self.command_turn_on(dev)
-				
-			elif action.deviceAction == indigo.kDimmerRelayAction.TurnOff:
-				self.command_turn_off(dev)	
-				
-			elif action.deviceAction == indigo.kDimmerRelayAction.Toggle:
-				if dev.onState:
-					self.command_turn_off(dev)	
-				else:
+		try:
+			if dev.deviceTypeId == 'maccmd':
+				if action.deviceAction == indigo.kDimmerRelayAction.TurnOn:
 					self.command_turn_on(dev)
-		
+				
+				elif action.deviceAction == indigo.kDimmerRelayAction.TurnOff:
+					self.command_turn_off(dev)	
+				
+				elif action.deviceAction == indigo.kDimmerRelayAction.Toggle:
+					if dev.onState:
+						self.command_turn_off(dev)	
+					else:
+						self.command_turn_on(dev)
+
+		except Exception as e:
+			self.logger.error (ex.stack_trace(e))		
 
 ################################################################################
 # INDIGO ACTION METHODS
@@ -229,6 +246,31 @@ class Plugin(indigo.PluginBase):
 # APPLESCRIPT HANDLER MIGRATED METHODS
 ################################################################################				
 
+	###
+	def run_custom_applescript (self, action):
+		"""
+		Run an custom AppleScript code from Actions.
+		"""
+		
+		# Remove any Control-Enter's from the text, they corrupt the script
+		script = ''
+		msg = '\n'
+		idx = 1
+		for s in action.props['script']:
+			msg += u'{}: {} ({})\n'.format(idx, ord(s), s)
+			idx = idx + 1
+			
+			if ord(s) != 8232:
+				script += s
+
+		#indigo.server.log(msg)
+		#indigo.server.log(script)
+		#return
+				
+		script = applescript.AppleScript(source=script)
+		response = script.run()
+		
+		
 	###
 	def run_applescript (self, action):
 		"""

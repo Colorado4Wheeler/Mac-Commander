@@ -1,4 +1,13 @@
-Release Notes
+Current Release Notes
+==========
+Version 2.0.0-b2
+---------------
+* Added Plugin Store update check
+* Added Custom AppleScript action with a full AppleScript editor built in so you can write scripts on the fly and run them (or copy and paste them, up to you)
+* Cleaned up action list with separators to delineate the commands more
+
+
+Previous Release Notes
 ==========
 
 Version 2.0.0-b1
