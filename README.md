@@ -1,11 +1,16 @@
-Mac Commander
-==========
+![](https://github.com/Colorado4Wheeler/WikiDocs/blob/master/Mac-Commander/Logo.png)
 
-A plugin for the Indigo home automation system (http://indigodomo.com)
 
-This plugin allows you to perform actions on any Mac in your network, whether it is the Indigo server or not.  What you can do is only limited to what Applescript can do on the given machine.
+# Mac Commander
 
-At its core this plugin is a Python program that executes Applescript commands on your desired machine.  While this is easily accomplished using Indigo's scripting, I wanted to be able to take it a step further by having an On/Off state associated with the command.
+This plugin for the [Indigo Domotics](http://www.indigodomo.com/) home automation platform that allows you to execute any AppleScript command on the Indigo server or any other Mac on your network remotely.  Essentially, if you can do something via AppleScript then you can use Mac Commander.
 
-For more information and documentation please visit http://forums.indigodomo.com/viewtopic.php?f=196&t=16129
+## Requirements
 
+In order to utilize this plugin on a remote Mac you will need to enable Remote Login and Remote Apple Events on the remote Mac in the Sharing Preferences for that Mac.  This is not needed if you are only going to use this plugin to control your Indigo computer.
+
+This requires Indigo 7 to run but there is a legacy version that is no longer updated (but still fully functional) that supports Indigo 6 and earlier.
+
+## EPS AppleScript Handler
+
+The AppleScript Handler plugin was created as a means for users to run AppleScripts as Indigo phases out AppleScript support.  That plugin is now rolled into Mac Commander and will be sunsetted.
