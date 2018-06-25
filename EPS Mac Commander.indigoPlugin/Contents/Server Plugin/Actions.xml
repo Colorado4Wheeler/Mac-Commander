@@ -1,18 +1,206 @@
 <?xml version="1.0"?>
 <Actions>
 	<SupportURL>http://forums.indigodomo.com/viewtopic.php?f=196&amp;t=16129</SupportURL>
+	
+	<!-- =========== LEGACY MAC COMMANDER 1.X ACTIONS =========== -->
 	<Action id="turnOn" deviceFilter="self">
-		<Name>Turn on</Name>
+		<Name>Legacy Turn on</Name>
 		<CallbackMethod>deviceAction</CallbackMethod>
 	</Action>
 	
 	<Action id="turnOff" deviceFilter="self">
-		<Name>Turn off</Name>
+		<Name>Legacy Turn off</Name>
 		<CallbackMethod>deviceAction</CallbackMethod>
 	</Action>
 	
 	<Action id="toggle" deviceFilter="self">
-		<Name>Toggle on/off</Name>
+		<Name>Legacy Toggle on/off</Name>
 		<CallbackMethod>deviceAction</CallbackMethod>
 	</Action>
+	
+	<!-- =========== MAC COMMANDER ACTION =========== -->
+	
+	<Action id="command" uiPath="">
+		<Name>Mac Command</Name>
+		<CallbackMethod>deviceAction</CallbackMethod>
+		<ConfigUI>
+			
+			<Field id="localhost" type="checkbox" defaultValue="False">
+				<Label> </Label>
+				<Description>Run actions on Indigo server</Description>
+			</Field>
+			
+			<Field id="label_localhost" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" visibleBindingId="localhost" visibleBindingValue="false" alwaysUseInDialogHeightCalc="true">
+                <Label>Select this option if the Mac you want to send commands to is the same Mac that Indigo is running on.</Label>
+            </Field>
+			
+			<Field id="sep_localhost" type="separator" />
+			
+			<Field id="computerip" type="textfield" defaultValue="192.168.1.1" visibleBindingId="localhost" visibleBindingValue="false" alwaysUseInDialogHeightCalc="true">
+				<Label>Remote Mac IP Address:</Label>
+			</Field>
+			
+			<Field id="label_computerip" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" visibleBindingId="localhost" visibleBindingValue="false" alwaysUseInDialogHeightCalc="true" >
+                <Label>The IP address of the Mac that you want to control.  Make sure that the Mac you want to control has both Remote Login and Remote Apple Events enabled in sharing.</Label>
+            </Field>
+			
+			<Field id="username" type="textfield" defaultValue="administrator" visibleBindingId="localhost" visibleBindingValue="false" alwaysUseInDialogHeightCalc="true" >
+				<Label>User Name:</Label>
+			</Field>
+			
+			<Field id="label_username" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" visibleBindingId="localhost" visibleBindingValue="false" alwaysUseInDialogHeightCalc="true" >
+                <Label>Enter the user ID that has the rights to execute remote commands on this Mac.</Label>
+            </Field>
+			
+			<Field id="password" type="textfield" defaultValue="password" secure="true" visibleBindingId="localhost" visibleBindingValue="false" alwaysUseInDialogHeightCalc="true" >
+				<Label>Password:</Label>
+			</Field>
+			
+			<Field id="label_password" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" visibleBindingId="localhost" visibleBindingValue="false" alwaysUseInDialogHeightCalc="true" >
+                <Label>Enter the password for the user.</Label>
+            </Field>
+			
+			<Field id="sep0" type="separator" visibleBindingId="localhost" visibleBindingValue="false"/>
+			
+			<Field type="menu" id="onCommand" defaultValue="runapp">
+				<Label>Action:</Label>
+				<List>
+					<Option value="none">- Do Nothing -</Option>
+					<Option value="runapp">Run Application</Option>
+					<Option value="quitapp">Quit Application</Option>
+					<Option value="showmessage">Display a message</Option>
+					<Option value="screensaver">Start Screensaver</Option>
+					<Option value="builtin">iTunes</Option>
+				</List>
+			</Field>
+			
+			<Field id="label_oncommand" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" >
+                <Label>The action you want to take.</Label>
+            </Field>
+			
+			<Field id="onAppname" type="textfield" defaultValue="App Store" visibleBindingId="onCommand" visibleBindingValue="runapp,quitapp" alwaysUseInDialogHeightCalc="true" >
+				<Label>Proper Application Name:</Label>
+			</Field>
+			
+			<Field id="label_onappname" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" visibleBindingId="onCommand" visibleBindingValue="runapp,quitapp">
+                <Label>The exact application name in the destination Macs Applications folder, be sure that all spaces and case matches or the command will not work.</Label>
+            </Field>
+			
+			<Field id="onMessage" type="textfield" defaultValue="Shut Down In 5 Minutes!" visibleBindingId="onCommand" visibleBindingValue="showmessage" >
+				<Label>Display Message:</Label>
+			</Field>
+			
+			<Field id="label_onMessage" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" visibleBindingId="onCommand" visibleBindingValue="showmessage">
+                <Label>The message you want sent to the computer as a notification.</Label>
+            </Field>
+			
+			<Field type="menu" id="onStandard" defaultValue="playpause" visibleBindingId="onCommand" visibleBindingValue="builtin">
+				<Label>iTunes Action:</Label>
+				<List>
+					<Option value="playpause">Play/Pause iTunes</Option>
+					<Option value="playlist">Play iTunes Playlist</Option>
+					<Option value="startitunes">Start iTunes</Option>
+					<Option value="stopitunes">Stop iTunes</Option>
+				</List>
+			</Field>
+			
+			<Field id="onPlaylist" type="textfield" defaultValue="My Playlist" visibleBindingId="onStandard" visibleBindingValue="playlist" >
+				<Label>Exact Playlist Name:</Label>
+			</Field>
+			
+		</ConfigUI>		
+	</Action>
+	
+	<Action id="notify" uiPath="">
+		<Name>Send Notification</Name>
+		<CallbackMethod>deviceAction</CallbackMethod>
+		<ConfigUI>
+			<Field id="localhost" type="checkbox" defaultValue="False">
+				<Label> </Label>
+				<Description>Run actions on Indigo server</Description>
+			</Field>
+			
+			<Field id="label_localhost" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" visibleBindingId="localhost" visibleBindingValue="false" alwaysUseInDialogHeightCalc="true">
+                <Label>Select this option if the Mac you want to send commands to is the same Mac that Indigo is running on.</Label>
+            </Field>
+			
+			<Field id="computerip" type="textfield" defaultValue="192.168.1.1" visibleBindingId="localhost" visibleBindingValue="false">
+				<Label>Remote Mac IP Address:</Label>
+			</Field>
+			
+			<Field id="label_computerip" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" visibleBindingId="localhost" visibleBindingValue="false" >
+                <Label>The IP address of the Mac that you want to control.  Make sure that the Mac you want to control has both Remote Login and Remote Apple Events enabled in sharing.</Label>
+            </Field>
+			
+			<Field id="username" type="textfield" defaultValue="administrator" visibleBindingId="localhost" visibleBindingValue="false" >
+				<Label>User Name:</Label>
+			</Field>
+			
+			<Field id="label_username" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" visibleBindingId="localhost" visibleBindingValue="false" >
+                <Label>Enter the user ID that has the rights to execute remote commands on this Mac.</Label>
+            </Field>
+			
+			<Field id="password" type="textfield" defaultValue="password" secure="true" visibleBindingId="localhost" visibleBindingValue="false" >
+				<Label>Password:</Label>
+			</Field>
+			
+			<Field id="label_password" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" visibleBindingId="localhost" visibleBindingValue="false" >
+                <Label>Enter the password for the user.</Label>
+            </Field>
+            		
+			<Field id="Message" type="textfield" defaultValue="" >
+				<Label>Message:</Label>
+			</Field>
+			
+			<Field id="label_Message" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true">
+                <Label>The message you want sent to the computer as a notification.</Label>
+            </Field>
+		</ConfigUI>
+	</Action>
+	
+	<!-- =========== MIGRATED APPLESCRIPT HANDLER ACTIONS =========== -->
+	<Action id="runScript" uiPath="">
+		<Name>Run AppleScript</Name>
+		<CallbackMethod>run_applescript</CallbackMethod>
+		<ConfigUI>
+			<SupportURL>https://github.com/Colorado4Wheeler/Indigo-AppleScript-Handler</SupportURL>
+			
+			<Field type="menu" id="script">
+                <Label>AppleScript:</Label>
+                <List class="self" filter="" method="get_folder_scripts" dynamicReload="true"/>
+            </Field>
+            
+            <Field type="checkbox" id="extra" defaultValue="false">
+				<Label> </Label>
+				<Description>I want to do something with the result</Description>
+			</Field>
+			
+			<Field type="separator" id="sep_1" visibleBindingId="extra" visibleBindingValue="true" alwaysUseInDialogHeightCalc="true"/>
+			
+			<Field type="menu" id="extraAction" defaultValue="storePlugin" visibleBindingId="extra" visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
+                <Label>Extra action:</Label>
+                <List>
+                	<Option value="storePlugin">Store it in the plugin</Option>
+                    <Option value="storeExistingVariable">Store it in an existing variable</Option>
+                    <Option value="storeNewVariable">Store it in a new variable</Option>
+                </List>
+            </Field>
+            
+			<Field type="menu" id="variable" visibleBindingId="extraAction" visibleBindingValue="storeExistingVariable" alwaysUseInDialogHeightCalc="true">
+				<Label>Variable:</Label>
+				<List class="indigo.variables" filter=""/>
+			</Field>
+			
+			<Field type="textfield" id="name" defaultValue="ScriptResult" visibleBindingId="extraAction" visibleBindingValue="storePlugin,storeNewVariable" tooltip="Name of the plugin variable for this value, can be any alphanumeric character or underscore but cannot contain spaces." alwaysUseInDialogHeightCalc="true">
+				<Label>Name:</Label>
+			</Field>
+			
+		</ConfigUI>
+	</Action>
+	
+	<!-- =========== hidden action to get value from external plugin =========== -->
+	<Action id="getStoredValue" uiPath="hidden">
+		<Name>Get Stored Value</Name>
+		<CallbackMethod>get_stored_value</CallbackMethod>
+	</Action>	
 </Actions>

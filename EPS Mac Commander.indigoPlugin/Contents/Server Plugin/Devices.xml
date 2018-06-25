@@ -10,57 +10,63 @@
 				<Description>Run actions on Indigo server</Description>
 			</Field>
 			
-			<Field id="label_localhost" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" >
+			<Field id="label_localhost" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" visibleBindingId="localhost" visibleBindingValue="false" alwaysUseInDialogHeightCalc="true">
                 <Label>Select this option if the Mac you want to send commands to is the same Mac that Indigo is running on.</Label>
             </Field>
 			
-			<Field id="computerip" type="textfield" defaultValue="192.168.1.1" visibleBindingId="localhost" visibleBindingValue="false">
+			<Field id="sep_localhost" type="separator" />
+			
+			<Field id="computerip" type="textfield" defaultValue="192.168.1.1" visibleBindingId="localhost" visibleBindingValue="false" alwaysUseInDialogHeightCalc="true">
 				<Label>Remote Mac IP Address:</Label>
 			</Field>
 			
-			<Field id="label_computerip" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" visibleBindingId="localhost" visibleBindingValue="false" >
+			<Field id="label_computerip" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" visibleBindingId="localhost" visibleBindingValue="false" alwaysUseInDialogHeightCalc="true" >
                 <Label>The IP address of the Mac that you want to control.  Make sure that the Mac you want to control has both Remote Login and Remote Apple Events enabled in sharing.</Label>
             </Field>
 			
-			<Field id="username" type="textfield" defaultValue="administrator" visibleBindingId="localhost" visibleBindingValue="false" >
+			<Field id="username" type="textfield" defaultValue="administrator" visibleBindingId="localhost" visibleBindingValue="false" alwaysUseInDialogHeightCalc="true" >
 				<Label>User Name:</Label>
 			</Field>
 			
-			<Field id="label_username" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" visibleBindingId="localhost" visibleBindingValue="false" >
+			<Field id="label_username" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" visibleBindingId="localhost" visibleBindingValue="false" alwaysUseInDialogHeightCalc="true" >
                 <Label>Enter the user ID that has the rights to execute remote commands on this Mac.</Label>
             </Field>
 			
-			<Field id="password" type="textfield" defaultValue="password" secure="true" visibleBindingId="localhost" visibleBindingValue="false" >
+			<Field id="password" type="textfield" defaultValue="password" secure="true" visibleBindingId="localhost" visibleBindingValue="false" alwaysUseInDialogHeightCalc="true" >
 				<Label>Password:</Label>
 			</Field>
 			
-			<Field id="label_password" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" visibleBindingId="localhost" visibleBindingValue="false" >
+			<Field id="label_password" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" visibleBindingId="localhost" visibleBindingValue="false" alwaysUseInDialogHeightCalc="true" >
                 <Label>Enter the password for the user.</Label>
             </Field>
 			
-			<Field id="sep0" type="separator" />
+			<Field id="sep0" type="separator" visibleBindingId="localhost" visibleBindingValue="false"/>
 			
 			<Field id="polling" type="checkbox" defaultValue="false" >
 				<Label> </Label>
-				<Description>Poll server to determine On/Off state</Description>
+				<Description>Poll computer to determine On/Off state</Description>
 			</Field>
 			
-			<Field type="menu" id="pollmethod" defaultValue="apprunning" visibleBindingId="polling" visibleBindingValue="true" >
+			<Field id="label_polling" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" visibleBindingId="polling" visibleBindingValue="false">
+                <Label>Enabling this will send ongoing requests to the destination computer to see if an application is running to automatically determine if this Mac Commander device is ON or OFF.</Label>
+            </Field>
+			
+			<Field type="menu" id="pollmethod" defaultValue="apprunning" visibleBindingId="polling" visibleBindingValue="true"  alwaysUseInDialogHeightCalc="true">
 				<Label>Polling Method:</Label>
 				<List>
 					<Option value="apprunning">Application is Running</Option>
 				</List>
 			</Field>
 			
-			<Field id="pollappname" type="textfield" defaultValue="Textedit" visibleBindingId="pollmethod" visibleBindingValue="apprunning" >
+			<Field id="pollappname" type="textfield" defaultValue="Textedit" visibleBindingId="pollmethod" visibleBindingValue="apprunning"  alwaysUseInDialogHeightCalc="true">
 				<Label>Proper Application Name:</Label>
 			</Field>
 			
-			<Field id="pollfrequency" type="textfield" defaultValue="60" visibleBindingId="polling" visibleBindingValue="true" >
+			<Field id="pollfrequency" type="textfield" defaultValue="60" visibleBindingId="polling" visibleBindingValue="true"  alwaysUseInDialogHeightCalc="true">
 				<Label>Polling Interval (Seconds):</Label>
 			</Field>
 			
-			<Field type="menu" id="polltype" defaultValue="always" visibleBindingId="polling" visibleBindingValue="true" >
+			<Field type="menu" id="polltype" defaultValue="always" visibleBindingId="polling" visibleBindingValue="true"  alwaysUseInDialogHeightCalc="true">
 				<Label>Polling Method:</Label>
 				<List>
 					<Option value="always">Always</Option>
@@ -76,7 +82,7 @@
 				<Description>Poll information from iTunes</Description>
 			</Field>
 			
-			<Field id="label1" type="label" visibleBindingId="itunespolling" visibleBindingValue="true">
+			<Field id="label_itunespolling" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" visibleBindingId="itunespolling" visibleBindingValue="false">
 				<Label>Poll iTunes on the Mac and populate device states with that information.  This can be the only thing this plugin does if you want and requires no further configuration except polling frequency.
 				</Label>
 			</Field>
@@ -94,7 +100,6 @@
 					<Option value="runapp">Run Application</Option>
 					<Option value="quitapp">Quit Application</Option>
 					<Option value="showmessage">Display a message</Option>
-					<Option value="sleep">Sleep</Option>
 					<Option value="screensaver">Start Screensaver</Option>
 					<Option value="builtin">iTunes</Option>
 				</List>
@@ -104,17 +109,21 @@
                 <Label>The action you want to take when this device is turned ON.</Label>
             </Field>
 			
-			<Field id="onAppname" type="textfield" defaultValue="App Store" visibleBindingId="onCommand" visibleBindingValue="runapp,quitapp" >
+			<Field id="onAppname" type="textfield" defaultValue="App Store" visibleBindingId="onCommand" visibleBindingValue="runapp,quitapp" alwaysUseInDialogHeightCalc="true" >
 				<Label>Proper Application Name:</Label>
 			</Field>
 			
-			<Field id="label_onappname" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" >
+			<Field id="label_onappname" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" visibleBindingId="onCommand" visibleBindingValue="runapp,quitapp">
                 <Label>The exact application name in the destination Macs Applications folder, be sure that all spaces and case matches or the command will not work.</Label>
             </Field>
 			
 			<Field id="onMessage" type="textfield" defaultValue="Shut Down In 5 Minutes!" visibleBindingId="onCommand" visibleBindingValue="showmessage" >
 				<Label>Display Message:</Label>
 			</Field>
+			
+			<Field id="label_onMessage" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" visibleBindingId="onCommand" visibleBindingValue="showmessage">
+                <Label>The message you want sent to the computer as a notification.</Label>
+            </Field>
 			
 			<Field type="menu" id="onStandard" defaultValue="playpause" visibleBindingId="onCommand" visibleBindingValue="builtin">
 				<Label>iTunes Action:</Label>
@@ -139,7 +148,6 @@
 					<Option value="runapp">Run Application</Option>
 					<Option value="quitapp">Quit Application</Option>
 					<Option value="showmessage">Display a message</Option>
-					<Option value="sleep">Sleep</Option>
 					<Option value="screensaver">Start Screensaver</Option>
 					<Option value="builtin">iTunes</Option>
 				</List>
@@ -149,19 +157,23 @@
                 <Label>The action you want to take when this device is turned OFF.</Label>
             </Field>
 			
-			<Field id="offAppname" type="textfield" defaultValue="App Store" visibleBindingId="offCommand" visibleBindingValue="runapp,quitapp" >
+			<Field id="offAppname" type="textfield" defaultValue="App Store" visibleBindingId="offCommand" visibleBindingValue="runapp,quitapp" alwaysUseInDialogHeightCalc="true" >
 				<Label>Proper Application Name:</Label>
 			</Field>
 			
-			<Field id="label_offappname" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" >
+			<Field id="label_offappname" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" visibleBindingId="offCommand" visibleBindingValue="runapp,quitapp">
                 <Label>The exact application name in the destination Macs Applications folder, be sure that all spaces and case matches or the command will not work.</Label>
             </Field>
 			
-			<Field id="offMessage" type="textfield" defaultValue="Shut Down In 5 Minutes!" visibleBindingId="offCommand" visibleBindingValue="showmessage" >
+			<Field id="offMessage" type="textfield" defaultValue="Shut Down In 5 Minutes!" visibleBindingId="offCommand" visibleBindingValue="showmessage" alwaysUseInDialogHeightCalc="true" >
 				<Label>Display Message:</Label>
 			</Field>
 			
-			<Field type="menu" id="offStandard" defaultValue="playpause" visibleBindingId="offCommand" visibleBindingValue="builtin">
+			<Field id="label_offMessage" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" visibleBindingId="offCommand" visibleBindingValue="showmessage">
+                <Label>The message you want sent to the computer as a notification.</Label>
+            </Field>
+			
+			<Field type="menu" id="offStandard" defaultValue="playpause" visibleBindingId="offCommand" visibleBindingValue="builtin" alwaysUseInDialogHeightCalc="true">
 				<Label>iTunes Action:</Label>
 				<List>
 					<Option value="playpause">Play/Pause iTunes</Option>
@@ -171,18 +183,12 @@
 				</List>
 			</Field>
 			
-			<Field id="offPlaylist" type="textfield" defaultValue="My Playlist" visibleBindingId="offStandard" visibleBindingValue="playlist" >
+			<Field id="offPlaylist" type="textfield" defaultValue="My Playlist" visibleBindingId="offStandard" visibleBindingValue="playlist" alwaysUseInDialogHeightCalc="true" >
 				<Label>Exact Playlist Name:</Label>
 			</Field>
 		</ConfigUI>
 		
 		<States>
-			<State id="onOffState">
-				<ValueType boolType="OnOff">Boolean</ValueType>
-				<TriggerLabel>Device state</TriggerLabel>
-				<ControlPageLabel>Device state</ControlPageLabel>
-			</State>
-			
 			<State id="itunessongname">
 				<ValueType>String</ValueType>
 				<TriggerLabel>iTunes current song name</TriggerLabel>
