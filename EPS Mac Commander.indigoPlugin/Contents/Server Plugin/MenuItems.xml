@@ -3,5 +3,85 @@
     <MenuItem id="savedVariables">
     	<Name>List All Saved Variable Names</Name>
     	<CallbackMethod>list_stored_variables</CallbackMethod>
-    </MenuItem>	
+    </MenuItem>
+    
+    <MenuItem id="sep_1"/>
+    
+    <MenuItem id="save_connections">
+    	<Name>Saved Connections</Name>
+    	<ButtonTitle>Done</ButtonTitle>
+    	<ConfigUI>
+    		<Field id="credentials" type="list" defaultValue="" rows="12">
+				<Label>Credentials:</Label>
+				<List class="self" filter="" method="list_credentials" dynamicReload="true"/>
+				<CallbackMethod>device_field_changed</CallbackMethod>
+			</Field>
+			
+            <Field id="label_action_spacer" type="label"  >
+                <Label>
+                </Label>
+            </Field>
+            
+            <Field id="action" type="menu" defaultValue="delete" >
+				<Label>List action:</Label>
+				<List>
+					<Option value="add">Add entry</Option>
+					<Option value="edit">Edit entry</Option>
+					<Option value="delete">Delete entry</Option>
+				</List>
+				<CallbackMethod>action_list_changed</CallbackMethod>
+			</Field>
+			
+			<Field id="showfields" type="checkbox" defaultValue="False" hidden="true">
+				<Label> </Label>
+				<Description>Show add/edit fields</Description>
+			</Field>
+			
+			<Field id="sep_0" type="separator" visibleBindingId="showfields" visibleBindingValue="true" alwaysUseInDialogHeightCalc="true" />
+			
+			<Field id="name" type="textfield" defaultValue="" visibleBindingId="showfields" visibleBindingValue="true" alwaysUseInDialogHeightCalc="true" >
+				<Label>Name:</Label>
+			</Field>
+			
+			<Field id="label_name" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" visibleBindingId="showfields" visibleBindingValue="true" alwaysUseInDialogHeightCalc="true"  >
+                <Label>The name of this connection.</Label>
+            </Field>
+    	
+			<Field id="computerip" type="textfield" defaultValue="" visibleBindingId="showfields" visibleBindingValue="true" alwaysUseInDialogHeightCalc="true" >
+				<Label>IP Address:</Label>
+			</Field>
+			
+			<Field id="label_computerip" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" visibleBindingId="showfields" visibleBindingValue="true" alwaysUseInDialogHeightCalc="true"  >
+                <Label>The IP address of the Mac that you want to control.  Make sure that the Mac you want to control has both Remote Login and Remote Apple Events enabled in sharing.</Label>
+            </Field>
+			
+			<Field id="username" type="textfield" defaultValue="" visibleBindingId="showfields" visibleBindingValue="true" alwaysUseInDialogHeightCalc="true"  >
+				<Label>User Name:</Label>
+			</Field>
+			
+			<Field id="label_username" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" visibleBindingId="showfields" visibleBindingValue="true" alwaysUseInDialogHeightCalc="true"  >
+                <Label>Enter the user ID that has the rights to execute remote commands on this Mac.</Label>
+            </Field>
+			
+			<Field id="password" type="textfield" defaultValue="" secure="true" visibleBindingId="showfields" visibleBindingValue="true" alwaysUseInDialogHeightCalc="true"  >
+				<Label>Password:</Label>
+			</Field>
+			
+			<Field id="label_password" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" visibleBindingId="showfields" visibleBindingValue="true" alwaysUseInDialogHeightCalc="true"  >
+                <Label>Enter the password for the user.</Label>
+            </Field>
+            
+			<Field id="label_action_spacer2" type="label" visibleBindingId="showfields" visibleBindingValue="true" alwaysUseInDialogHeightCalc="true"  >
+                <Label>
+                </Label>
+            </Field>
+            		
+			<Field id="update" type="button">
+				<Label> </Label>
+				<Title>Go </Title>
+				<CallbackMethod>action_button_clicked</CallbackMethod>
+			</Field>
+			
+		</ConfigUI>
+    </MenuItem>
 </MenuItems>

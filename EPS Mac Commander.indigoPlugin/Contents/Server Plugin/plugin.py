@@ -24,9 +24,14 @@ from subprocess import Popen, PIPE
 import applescript
 import glob
 import re
+import base64
+import thread
 
 # Third Party Modules
+sys.path.append('lib/psutil')
 import indigo
+from lib.pexpect import pxssh
+import psutil
 
 # Package Modules
 from lib.eps import ex
@@ -47,8 +52,12 @@ class Plugin(indigo.PluginBase):
 		self.pollinglist = {}
 		self.auditpolling = 0
 		self.itunespollinglist = {} # 1.1.0
+		if not 'credentials' in self.pluginPrefs: self.pluginPrefs['credentials'] = []
+		
 		self.next_version_check = datetime.now() + timedelta(days=7)
 		version.version_check(self)
+		
+		#indigo.server.log(u'{}'.format(psutil.cpu_percent()))
 		
 	###
 	def __del__(self):
@@ -129,7 +138,44 @@ class Plugin(indigo.PluginBase):
 						self.command_turn_on(dev)
 
 		except Exception as e:
-			self.logger.error (ex.stack_trace(e))		
+			self.logger.error (ex.stack_trace(e))	
+			
+	###
+	def getDeviceConfigUiValues(self, valuesDict, typeId, devId):
+		"""
+		Indigo function called prior to the form loading in case we need to do pre-calculations.
+		"""
+		
+		try:
+			errorsDict = indigo.Dict()
+			
+			# Set new device defaults
+			if not 'credentials' in valuesDict: valuesDict['credentials'] = 'manual'
+			if not 'onCommand' in valuesDict: valuesDict['onCommand'] = 'runapp'
+			if not 'offCommand' in valuesDict: valuesDict['offCommand'] = 'runapp'
+			
+		except Exception as e:
+			self.logger.error (ex.stack_trace(e))	
+			
+		return (valuesDict, errorsDict)	
+		
+	###
+	def getActionConfigUiValues(self, valuesDict, typeId, devId):
+		"""
+		Indigo function called prior to the form loading in case we need to do pre-calculations.
+		"""
+		
+		try:
+			errorsDict = indigo.Dict()
+			
+			# Set new device defaults
+			if not 'credentials' in valuesDict: valuesDict['credentials'] = 'manual'
+			if not 'onCommand' in valuesDict: valuesDict['onCommand'] = 'runapp'
+						
+		except Exception as e:
+			self.logger.error (ex.stack_trace(e))	
+			
+		return (valuesDict, errorsDict)					
 
 ################################################################################
 # INDIGO ACTION METHODS
@@ -152,95 +198,354 @@ class Plugin(indigo.PluginBase):
 		return (True, valuesDict, errorsDict)		
 		
 ################################################################################
-# MAC COMMAND RELAY DEVICE
-################################################################################	
+# SAVED CONNECTIONS
+################################################################################		
+
 	###
-	def command_turn_on (self, dev, props = {}):
-		if not props: props = dev.pluginProps
-	
-		if props["onCommand"] == "none":
-			return
-		elif props["onCommand"] == "runapp":
-			self.openApp (dev, "on", props)
-			if not dev is None: 
-				dev.updateStateOnServer("onOffState", True)
-				self.configurePolling (dev, props)
-		elif props["onCommand"] == "quitapp":
-			self.quitApp (dev, "on", props)
-			if not dev is None: 
-				dev.updateStateOnServer("onOffState", True)
-				self.configurePolling (dev, props)
-		elif props["onCommand"] == "sleep":
-			self.sleepComputer (dev, "on", props)
-			if not dev is None: 
-				dev.updateStateOnServer("onOffState", True)
-				self.configurePolling (dev, props)
-		elif props["onCommand"] == "restart":
-			self.restart_computer (dev, "on", props)
-			if not dev is None: 
-				dev.updateStateOnServer("onOffState", True)
-				self.configurePolling (dev, props)	
-		elif props["onCommand"] == "screensaver":
-			self.screenSaver (dev, "on", props)
-			if not dev is None: 
-				dev.updateStateOnServer("onOffState", True)
-				self.configurePolling (dev, props)
-		elif props["onCommand"] == "showmessage":
-			self.send_message (dev, "on", props)
-		elif props["onCommand"] == "builtin":
-			if props["onStandard"] == "playpause":
-				self.playPause (dev, "on", props)
-			if props["onStandard"] == "playlist":
-				self.playList (dev, "on", props)
-			if props["onStandard"] == "startitunes":
-				self.startStopiTunes (dev, "start", props)
-			if props["onStandard"] == "stopitunes":
-				self.startStopiTunes (dev, "stop", props)
+	def get_saved_credential (self, name = '', ip = ''):
+		try:
+			credentials = self.pluginPrefs['credentials']
 			
-			# Since this was an ON command, turn it on
-			if not dev is None:
-				dev.updateStateOnServer("onOffState", True)
-				self.configurePolling (dev, props)
+			for c in credentials:
+				item = base64.b64decode(c).split("||")
+				if not name == '' and item[0] == name:
+					return item
+				elif not ip == '' and item[1] == ip:
+					return item	
+					
+			return False
+					
+		except Exception as e:
+			self.logger.error (ex.stack_trace(e))
+	
+	###
+	def save_credential (self, name, ip, user, password):
+		try:
+			credentials = self.pluginPrefs['credentials']
+			newcredentials = []
+			
+			for c in credentials:
+				item = base64.b64decode(c).split("||")
+				if not name == '' and item[0] == name:
+					return False
+					
+				newcredentials.append(c)
+
+			item = u'{}||{}||{}||{}'.format(name, ip, user, password)
+			newcredentials.append(base64.b64encode(bytes(item)))				
+					
+			self.pluginPrefs['credentials'] = newcredentials
+			
+			return True
+			
+		except Exception as e:
+			self.logger.error (ex.stack_trace(e))
+			return False
+			
+	###
+	def update_saved_credential (self, name, newname, ip, user, password):
+		try:
+			credentials = self.pluginPrefs['credentials']
+			newcredentials = []
+			
+			for c in credentials:
+				item = base64.b64decode(c).split("||")
+				if item[0] == newname and name != newname:
+					return False
+			
+			for c in credentials:
+				item = base64.b64decode(c).split("||")
+				if (not name == '' and item[0] == name) or (not ip == '' and item[1] == ip):
+					item = u'{}||{}||{}||{}'.format(newname, ip, user, password)
+					newcredentials.append(base64.b64encode(bytes(item)))
+				else:
+					newcredentials.append(c)
+					
+			self.pluginPrefs['credentials'] = newcredentials
+			
+			return True
+			
+		except Exception as e:
+			self.logger.error (ex.stack_trace(e))	
+
+	###
+	def action_list_changed (self, valuesDict, typeId):	
+		"""
+		Drop down list was changed, enable/disable edit fields.
+		"""
+		
+		try:
+			errorsDict = indigo.Dict()
+			if not 'action' in valuesDict: return (valuesDict, errorsDict)
+			
+			if valuesDict['action'] == 'delete':
+				valuesDict['showfields'] = False
+			elif valuesDict['action'] == 'add':
+				valuesDict['showfields'] = True
+			else:
+				valuesDict['showfields'] = False
+			
+		except Exception as e:
+			self.logger.error (ex.stack_trace(e))	
+			
+		return (valuesDict, errorsDict)	
+
+	###
+	def action_button_clicked (self, valuesDict, typeId):				
+		"""
+		User clicked the action button.
+		"""
+		
+		try:
+			credentials = self.pluginPrefs['credentials']
+			
+			errorsDict = indigo.Dict()
+			
+			if valuesDict['action'] == 'add':
+				if not self.save_credential (valuesDict['name'],valuesDict['computerip'],valuesDict['username'],valuesDict['password']):
+					errorsDict['showAlertText'] = 'There is already a connection saved as that name, please use a different name.'
+					return (valuesDict, errorsDict)	
+					
+				else:
+					valuesDict['name'] = ''
+					valuesDict['computerip'] = ''
+					valuesDict['username'] = ''
+					valuesDict['password'] = ''
+			
+			elif valuesDict['action'] == 'delete':	
+				if not valuesDict['credentials']:
+					errorsDict['showAlertText'] = 'You must select which credentials to edit from the list.'
+					return (valuesDict, errorsDict)	
+				elif len(valuesDict['credentials']) > 1:
+					errorsDict['showAlertText'] = 'Too many credentials selected, please select a single credential to edit.'
+					return (valuesDict, errorsDict)
+				else:
+					credentials = self.pluginPrefs['credentials']
+					newcredentials = []
+			
+					for c in credentials:
+						item = base64.b64decode(c).split("||")
+						if not item[0] == valuesDict['credentials'][0]:
+							newcredentials.append(c)
+
+					self.pluginPrefs['credentials'] = newcredentials
+				
+			elif valuesDict['action'] == 'edit':
+				if not valuesDict['showfields']:
+					if not valuesDict['credentials']:
+						errorsDict['showAlertText'] = 'You must select which credentials to edit from the list.'
+						return (valuesDict, errorsDict)	
+					elif len(valuesDict['credentials']) > 1:
+						errorsDict['showAlertText'] = 'Too many credentials selected, please select a single credential to edit.'
+						return (valuesDict, errorsDict)
+					else:
+						for c in credentials:
+							item = self.get_saved_credential (valuesDict['credentials'][0])
+							if item:
+								valuesDict['name'] = item[0]
+								valuesDict['computerip'] = item[1]
+								valuesDict['username'] = item[2]
+								valuesDict['password'] = item[3]
+						
+						valuesDict['showfields'] = True	
+						
+				else:
+					if not self.update_saved_credential (valuesDict['credentials'][0], valuesDict['name'],valuesDict['computerip'],valuesDict['username'],valuesDict['password']):
+						errorsDict['showAlertText'] = 'There is already a connection saved as that name, please use a different name.'
+						return (valuesDict, errorsDict)	
+					else:
+						valuesDict['name'] = ''
+						valuesDict['computerip'] = ''
+						valuesDict['username'] = ''
+						valuesDict['password'] = ''
+						valuesDict['showfields'] = False
+					
+				
+			elif valuesDict['action'] == 'delete':
+				pass	
+			
+		except Exception as e:
+			self.logger.error (ex.stack_trace(e))
+			
+		return (valuesDict, errorsDict)	
 		
 	###
-	def command_turn_off (self, dev):
-		if dev.ownerProps["offCommand"] == "none":
-			return
-		elif dev.ownerProps["offCommand"] == "runapp":
-			self.openApp (dev, "off")
-			dev.updateStateOnServer("onOffState", False)
-			self.configurePolling (dev, dev.ownerProps)
-		elif dev.ownerProps["offCommand"] == "quitapp":
-			self.quitApp (dev, "off")
-			dev.updateStateOnServer("onOffState", False)
-			self.configurePolling (dev, dev.ownerProps)
-		elif dev.ownerProps["offCommand"] == "sleep":
-			self.sleepComputer (dev, "off")
-			dev.updateStateOnServer("onOffState", False)
-			self.configurePolling (dev, dev.ownerProps)
-		elif dev.ownerProps["onCommand"] == "restart":
-			self.restart_computer (dev, "off")
-			dev.updateStateOnServer("onOffState", False)
-			self.configurePolling (dev, dev.ownerProps)	
-		elif dev.ownerProps["offCommand"] == "screensaver":
-			self.screenSaver (dev, "off")
-			dev.updateStateOnServer("onOffState", False)
-			self.configurePolling (dev, dev.ownerProps)
-		elif dev.ownerProps["offCommand"] == "showmessage":
-			self.send_message (dev, "off")	
-		elif dev.ownerProps["offCommand"] == "builtin":
-			if dev.ownerProps["offStandard"] == "playpause":
-				self.playPause (dev, "off")
-			if dev.ownerProps["offStandard"] == "playlist":
-				self.playList (dev, "off")
-			if dev.ownerProps["offStandard"] == "startitunes":
-				self.startStopiTunes (dev, "start")
-			if dev.ownerProps["offStandard"] == "stopitunes":
-				self.startStopiTunes (dev, "stop")	
+	def list_credentials (self, filter="", valuesDict=None, typeId="", targetId=0): 
+		"""
+		Build a custom list of the saved credentials.
+		"""
+		
+		try:
+			listData = []
+			if filter == 'device': listData = [('manual', 'Manual Login')]
+			credentials = self.pluginPrefs['credentials']
+			if not credentials: return listData
+			
+			for c in credentials:
+				keyString = base64.b64decode(c)
+				#indigo.server.log(u'{}'.format(keyString))
+				item = keyString.split("||")
 				
-			# Since this was an OFF command, turn it off
-			dev.updateStateOnServer("onOffState", False)
-			self.configurePolling (dev, dev.ownerProps)	
+				if item[0] != '': listData.append ((item[0], u'{} ({})'.format(item[0], item[1])))
+			
+		except Exception as e:
+			self.logger.error (ex.stack_trace(e))
+			
+		return listData		
+		
+################################################################################
+# MAC COMMAND RELAY DEVICE
+################################################################################	
+
+	###
+	def _command (self, dev, method = 'on', props = {}):
+		try:
+			if not props: props = dev.pluginProps
+			onState = True
+			if method == 'off': onState = False
+		
+			# We aren't writing props back, so fill in with saved credentials to pass around
+			if 'credentials' in props and props['credentials'] != 'manual':
+				item = self.get_saved_credential (props['credentials'])
+				if item:
+					props['name'] = item[0]
+					props['computerip'] = item[1]
+					props['username'] = item[2]
+					props['password'] = item[3]
+					
+			command = props["{}Command".format(method)]
+								
+			if command == "none":
+				return
+				
+			elif command == "runapp":
+				self.openApp (dev, method, props)
+				if not dev is None: 
+					dev.updateStateOnServer("onOffState", onState)
+					self.configurePolling (dev, props)
+					
+			elif command == "quitapp":
+				self.quitApp (dev, method, props)
+				if not dev is None: 
+					dev.updateStateOnServer("onOffState", onState)
+					self.configurePolling (dev, props)
+					
+			elif command == "sleep":
+				self.sleepComputer (dev, method, props)
+				if not dev is None: 
+					dev.updateStateOnServer("onOffState", onState)
+					self.configurePolling (dev, props)
+					
+			elif command == "restart":
+				self.restart_computer (dev, method, props)
+				if not dev is None: 
+					dev.updateStateOnServer("onOffState", onState)
+					self.configurePolling (dev, props)
+					
+			elif command == "update":
+				thread.start_new_thread (self.update_computer, (dev, method, props))
+				
+			elif command == "shutdown":
+				self.shutdown_computer (dev, method, props)
+				if not dev is None: 
+					dev.updateStateOnServer("onOffState", onState)
+					self.configurePolling (dev, props)			
+					
+			elif command == "screensaver":
+				self.screenSaver (dev, method, props)
+				if not dev is None: 
+					dev.updateStateOnServer("onOffState", onState)
+					self.configurePolling (dev, props)
+					
+			elif command == "showmessage":
+				self.send_message (dev, method, props)
+				
+			elif command == "builtin":
+				if props["{}Standard".format(method)] == "playpause":
+					self.playPause (dev, method, props)
+				if props["{}Standard".format(method)] == "playlist":
+					self.playList (dev, method, props)
+				if props["{}Standard".format(method)] == "startitunes":
+					self.startStopiTunes (dev, "start", props)
+				if props["{}Standard".format(method)] == "stopitunes":
+					self.startStopiTunes (dev, "stop", props)
+			
+				# Since this was an ON command, turn it on
+				if not dev is None:
+					dev.updateStateOnServer("onOffState", onState)
+					self.configurePolling (dev, props)
+
+		except Exception as e:
+			self.logger.error (ex.stack_trace(e))	
+
+	###
+	def command_turn_on (self, dev, props = {}):
+		try:
+			self._command (dev, 'on', props)
+
+		except Exception as e:
+			self.logger.error (ex.stack_trace(e))
+		
+	###
+	def command_turn_off (self, dev, props = {}):
+		try:
+			self._command (dev, 'off', props)
+
+		except Exception as e:
+			self.logger.error (ex.stack_trace(e))			
+		
+		
+	###
+	def ssh (self, props, activity):
+		"""
+		Establish SSH to remote computer and return the prompt.
+		"""
+		try:
+			if not props["localhost"]:
+				s = pxssh.pxssh()
+				if not s.login (props["computerip"], props["username"], props["password"]):
+					self.logger.error ("SSH session failed to login to '{}'.  Check your IP, username and password and make sure you can SSH to that computer from the Indigo server.".format(props['credentials'][0]))
+					return False
+					
+				#rootprompt = re.compile('.*[$#]')	
+				#i = self.expect(["(?i)are you sure you want to continue connecting", "(?i)(?:password)|(?:passphrase for key)", "(?i)permission denied", "(?i)terminal type", "(?i)connection closed by remote host"], timeout=20)
+				#indigo.server.log(u'{}'.format(i))
+				s.sendline('sudo -s')
+				s.sendline(props["password"])
+				
+				return s
+			
+			else:
+				self.logger.error ("{} the Indigo computer is not currently supported".format(activity))
+		
+		except Exception as e:
+			self.logger.error (ex.stack_trace(e))
+			
+		return None	
+		
+	###
+	def list_commands (self, filter="", valuesDict=None, typeId="", targetId=0): 
+		"""
+		Return the list of all commands.
+		"""
+		
+		try:
+			listData = []
+			listData.append (('none', '- Do Nothing -'))
+			listData.append (('runapp', 'Run Application'))
+			listData.append (('quitapp', 'Quit Application'))
+			listData.append (('showmessage', 'Display Notification Message'))
+			listData.append (('screensaver', 'Start Screensaver'))
+			listData.append (('restart', 'Restart Computer'))
+			listData.append (('sleep', 'Sleep Computer'))
+			listData.append (('shutdown', 'Turn Off Computer'))
+			listData.append (('update', 'Install Software Updates'))
+			listData.append (('builtin', 'iTunes'))
+			
+		except Exception as e:
+			self.logger.error (ex.stack_trace(e))
+			
+		return listData				
 		
 ################################################################################
 # APPLESCRIPT HANDLER MIGRATED METHODS
@@ -269,6 +574,19 @@ class Plugin(indigo.PluginBase):
 				
 		script = applescript.AppleScript(source=script)
 		response = script.run()
+		
+		if "extra" in action.props and action.props["extra"]:
+			try:
+				if action.props["extraAction"] == "storeNewVariable": 
+					self.store_to_variable (action.props["name"], response)
+				elif action.props["extraAction"] == "storeExistingVariable": 
+					self.store_to_variable (action.props["variable"], response)
+				elif action.props["extraAction"] == "storePlugin": 
+					self.store_to_plugin (action.props["name"], response)
+			except:
+				pass
+		
+		return response
 		
 		
 	###
@@ -386,7 +704,26 @@ class Plugin(indigo.PluginBase):
 			return retList
 			
 		except Exception as e:
-			self.logger.error(unicode(e))		
+			self.logger.error(unicode(e))	
+
+
+################################################################################
+# MAC COMMANDER UI FUNCTIONS
+################################################################################
+			
+	###
+	def commander_field_changed (self, valuesDict, typeId, devId = ''):
+		"""
+		Triggers form actions.
+		"""
+		
+		try:
+			errorsDict = indigo.Dict()
+			
+		except Exception as e:
+			self.logger.error (ex.stack_trace(e))	
+			
+		return (valuesDict, errorsDict)					
 	
 			
 ################################################################################
@@ -411,27 +748,90 @@ class Plugin(indigo.PluginBase):
 			self.command_turn_off(dev)	
 			
 		elif action == 'notify':
-			self.send_message (None, '', devAction.props)
+			props = devAction.props
+			
+			# We aren't writing props back, so fill in with saved credentials to pass around
+			if 'credentials' in props and props['credentials'] != 'manual':
+				item = self.get_saved_credential (props['credentials'])
+				if item:
+					props['name'] = item[0]
+					props['computerip'] = item[1]
+					props['username'] = item[2]
+					props['password'] = item[3]
+					
+			self.send_message (None, '', props)
 			
 		elif action == 'command':
 			self.command_turn_on(None, devAction.props)
 				
 		else:
 			return
-	
+			
 	###
 	def sleepComputer (self, dev, method, props = {}):
-		cmd = " -e 'sleep'"
-		cmd = self.encapsulateCmd (dev, cmd, "Finder", "Finder", props)
-		result = self.runOsa (cmd)
+		#cmd = " -e 'sleep'"
+		#cmd = self.encapsulateCmd (dev, cmd, "Finder", "Finder", props)
+		#result = self.runOsa (cmd)
 		
-		indigo.server.log(u"{}\n{}".format(cmd,result))
+		try:
+			s = self.ssh (props, "Sleeping")
+			if s:		
+				s.sendline ('pmset sleepnow')
+				
+				s.prompt() 
+				s.logout()
+				
+		except Exception as e:
+			self.logger.error (ex.stack_trace(e))	
 		
 	###
 	def restart_computer (self, dev, method, props = {}):
-		cmd = " -e 'restart'"
-		cmd = self.encapsulateCmd (dev, cmd, "Finder", "Finder", props)
-		result = self.runOsa (cmd)	
+		try:
+			if not props: props = dev.pluginProps
+			
+			s = self.ssh (props, "Rebooting")
+			if s:		
+				s.sendline ('sudo shutdown -r now')
+				
+				s.prompt() 
+				s.logout()
+				
+		except Exception as e:
+			self.logger.error (ex.stack_trace(e))	
+			
+	###
+	def shutdown_computer (self, dev, method, props = {}):
+		try:
+			if not props: props = dev.pluginProps
+			
+			s = self.ssh (props, "Shutting down")
+			if s:		
+				s.sendline ('sudo shutdown -h now')
+				
+				s.prompt() 
+				s.logout()
+				
+		except Exception as e:
+			self.logger.error (ex.stack_trace(e))	
+			
+	###
+	def update_computer (self, dev, method, props = {}):
+		try:
+			if not props: props = dev.pluginProps
+			
+			s = self.ssh (props, "Update")
+			if s:		
+				s.sendline ('sudo softwareupdate -iaR')
+				
+				try:
+					s.prompt(timeout=1200) 
+					s.logout()
+				except Exception as ex:
+					pass # if we rebooted then it may time out	
+				
+				
+		except Exception as e:
+			self.logger.error (ex.stack_trace(e))				
 		
 	###
 	def screenSaver (self, dev, method, props = {}):
@@ -472,10 +872,12 @@ class Plugin(indigo.PluginBase):
 	
 	###
 	def quitApp (self, dev, method, props = {}):
+		if not props: props = dev.pluginProps
 		cmd = " -e 'quit'"
-		cmd = self.encapsulateCmd (dev, cmd, "Finder", dev.ownerProps[method + "Appname"], props)
+		cmd = self.encapsulateCmd (dev, cmd, "Finder", props[method + "Appname"], props)
 		
 		result = self.runOsa (cmd)
+		#indigo.server.log(u"{}".format(result))
 		
 	###
 	def openApp (self, dev, method, props = {}):
@@ -493,7 +895,7 @@ class Plugin(indigo.PluginBase):
 		if not props: props = dev.pluginProps
 		cmd = " -e 'display notification \"{}\" with title \"Mac Commander for Indigo\"'".format(props[method + "Message"])
 		cmd = self.encapsulateCmd (dev, cmd, "Finder", "Finder", props)
-		
+		#indigo.server.log(u'{}'.format(cmd))
 		result = self.runOsa (cmd)	
 		
 	###

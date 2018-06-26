@@ -30,50 +30,55 @@
 			<Field id="localhost" type="checkbox" defaultValue="False">
 				<Label> </Label>
 				<Description>Run actions on Indigo server</Description>
+				<CallbackMethod>commander_field_changed</CallbackMethod>
 			</Field>
 			
 			<Field id="label_localhost" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" visibleBindingId="localhost" visibleBindingValue="false" alwaysUseInDialogHeightCalc="true">
                 <Label>Select this option if the Mac you want to send commands to is the same Mac that Indigo is running on.</Label>
             </Field>
+            
+            <Field id="label_localhost2" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" visibleBindingId="localhost" visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
+                <Label>Uncheck this option if the Mac you want to send commands to is not the same Mac that Indigo is running on.</Label>
+            </Field>
 			
+			<Field id="credentials" type="menu" defaultValue="manual" visibleBindingId="localhost" visibleBindingValue="false">
+				<Label>Credentials:</Label>
+				<List class="self" filter="device" method="list_credentials" dynamicReload="false"/>
+			</Field>
+			
+			<Field id="label_credentials" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" visibleBindingId="localhost" visibleBindingValue="false" alwaysUseInDialogHeightCalc="true">
+                <Label>Select Manual to provide credentials on the fly or select previously saved credentials.  You can modify your saved credentials from the plugin menu.</Label>
+            </Field>
+						
 			<Field id="sep_localhost" type="separator" />
-			
-			<Field id="computerip" type="textfield" defaultValue="192.168.1.1" visibleBindingId="localhost" visibleBindingValue="false" alwaysUseInDialogHeightCalc="true">
+						
+			<Field id="computerip" type="textfield" defaultValue="" visibleBindingId="credentials" visibleBindingValue="manual" alwaysUseInDialogHeightCalc="true">
 				<Label>Remote Mac IP Address:</Label>
 			</Field>
 			
-			<Field id="label_computerip" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" visibleBindingId="localhost" visibleBindingValue="false" alwaysUseInDialogHeightCalc="true" >
+			<Field id="label_computerip" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" visibleBindingId="credentials" visibleBindingValue="manual" alwaysUseInDialogHeightCalc="true" >
                 <Label>The IP address of the Mac that you want to control.  Make sure that the Mac you want to control has both Remote Login and Remote Apple Events enabled in sharing.</Label>
             </Field>
 			
-			<Field id="username" type="textfield" defaultValue="administrator" visibleBindingId="localhost" visibleBindingValue="false" alwaysUseInDialogHeightCalc="true" >
+			<Field id="username" type="textfield" defaultValue="" visibleBindingId="credentials" visibleBindingValue="manual" alwaysUseInDialogHeightCalc="true" >
 				<Label>User Name:</Label>
 			</Field>
 			
-			<Field id="label_username" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" visibleBindingId="localhost" visibleBindingValue="false" alwaysUseInDialogHeightCalc="true" >
+			<Field id="label_username" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" visibleBindingId="credentials" visibleBindingValue="manual" alwaysUseInDialogHeightCalc="true" >
                 <Label>Enter the user ID that has the rights to execute remote commands on this Mac.</Label>
             </Field>
 			
-			<Field id="password" type="textfield" defaultValue="password" secure="true" visibleBindingId="localhost" visibleBindingValue="false" alwaysUseInDialogHeightCalc="true" >
+			<Field id="password" type="textfield" defaultValue="" secure="true" visibleBindingId="credentials" visibleBindingValue="manual" alwaysUseInDialogHeightCalc="true" >
 				<Label>Password:</Label>
 			</Field>
 			
-			<Field id="label_password" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" visibleBindingId="localhost" visibleBindingValue="false" alwaysUseInDialogHeightCalc="true" >
+			<Field id="label_password" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" visibleBindingId="credentials" visibleBindingValue="manual" alwaysUseInDialogHeightCalc="true" >
                 <Label>Enter the password for the user.</Label>
             </Field>
 			
-			<Field id="sep0" type="separator" visibleBindingId="localhost" visibleBindingValue="false"/>
-			
 			<Field type="menu" id="onCommand" defaultValue="runapp">
 				<Label>Action:</Label>
-				<List>
-					<Option value="none">- Do Nothing -</Option>
-					<Option value="runapp">Run Application</Option>
-					<Option value="quitapp">Quit Application</Option>
-					<Option value="showmessage">Display a message</Option>
-					<Option value="screensaver">Start Screensaver</Option>
-					<Option value="builtin">iTunes</Option>
-				</List>
+				<List class="self" filter="" method="list_commands" dynamicReload="false"/>
 			</Field>
 			
 			<Field id="label_oncommand" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" >
@@ -117,38 +122,56 @@
 		<Name>Send Notification</Name>
 		<CallbackMethod>deviceAction</CallbackMethod>
 		<ConfigUI>
-			<Field id="localhost" type="checkbox" defaultValue="False">
+			<Field id="localhost" type="checkbox" defaultValue="True">
 				<Label> </Label>
 				<Description>Run actions on Indigo server</Description>
+				<CallbackMethod>commander_field_changed</CallbackMethod>
 			</Field>
 			
 			<Field id="label_localhost" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" visibleBindingId="localhost" visibleBindingValue="false" alwaysUseInDialogHeightCalc="true">
                 <Label>Select this option if the Mac you want to send commands to is the same Mac that Indigo is running on.</Label>
             </Field>
+            
+            <Field id="label_localhost2" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" visibleBindingId="localhost" visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
+                <Label>Uncheck this option if the Mac you want to send commands to is not the same Mac that Indigo is running on.</Label>
+            </Field>
 			
-			<Field id="computerip" type="textfield" defaultValue="192.168.1.1" visibleBindingId="localhost" visibleBindingValue="false">
+			<Field id="credentials" type="menu" defaultValue="manual" visibleBindingId="localhost" visibleBindingValue="false">
+				<Label>Credentials:</Label>
+				<List class="self" filter="device" method="list_credentials" dynamicReload="false"/>
+			</Field>
+			
+			<Field id="label_credentials" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" visibleBindingId="localhost" visibleBindingValue="false" alwaysUseInDialogHeightCalc="true">
+                <Label>Select Manual to provide credentials on the fly or select previously saved credentials.  You can modify your saved credentials from the plugin menu.</Label>
+            </Field>
+						
+			
+						
+			<Field id="computerip" type="textfield" defaultValue="" visibleBindingId="credentials" visibleBindingValue="manual" alwaysUseInDialogHeightCalc="true">
 				<Label>Remote Mac IP Address:</Label>
 			</Field>
 			
-			<Field id="label_computerip" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" visibleBindingId="localhost" visibleBindingValue="false" >
+			<Field id="label_computerip" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" visibleBindingId="credentials" visibleBindingValue="manual" alwaysUseInDialogHeightCalc="true" >
                 <Label>The IP address of the Mac that you want to control.  Make sure that the Mac you want to control has both Remote Login and Remote Apple Events enabled in sharing.</Label>
             </Field>
 			
-			<Field id="username" type="textfield" defaultValue="administrator" visibleBindingId="localhost" visibleBindingValue="false" >
+			<Field id="username" type="textfield" defaultValue="" visibleBindingId="credentials" visibleBindingValue="manual" alwaysUseInDialogHeightCalc="true" >
 				<Label>User Name:</Label>
 			</Field>
 			
-			<Field id="label_username" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" visibleBindingId="localhost" visibleBindingValue="false" >
+			<Field id="label_username" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" visibleBindingId="credentials" visibleBindingValue="manual" alwaysUseInDialogHeightCalc="true" >
                 <Label>Enter the user ID that has the rights to execute remote commands on this Mac.</Label>
             </Field>
 			
-			<Field id="password" type="textfield" defaultValue="password" secure="true" visibleBindingId="localhost" visibleBindingValue="false" >
+			<Field id="password" type="textfield" defaultValue="" secure="true" visibleBindingId="credentials" visibleBindingValue="manual" alwaysUseInDialogHeightCalc="true" >
 				<Label>Password:</Label>
 			</Field>
 			
-			<Field id="label_password" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" visibleBindingId="localhost" visibleBindingValue="false" >
+			<Field id="label_password" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" visibleBindingId="credentials" visibleBindingValue="manual" alwaysUseInDialogHeightCalc="true" >
                 <Label>Enter the password for the user.</Label>
             </Field>
+            		
+            <Field id="sep_localhost" type="separator" />	
             		
 			<Field id="Message" type="textfield" defaultValue="" >
 				<Label>Message:</Label>
@@ -231,7 +254,7 @@
             <Field id="label_script" type="label" fontColor="darkgray" fontSize="mini" alignWithControl="true" >
                 <Label>Write out your custom AppleScript that you want to run.  Use Control-Enter for new lines.  You can also copy-and-paste your scripts into this field.</Label>
             </Field>
-            
+                       
             <Field type="checkbox" id="extra" defaultValue="false">
 				<Label> </Label>
 				<Description>I want to do something with the result</Description>

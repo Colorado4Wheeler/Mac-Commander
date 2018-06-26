@@ -1,14 +1,25 @@
 Current Release Notes
 ==========
+
+Version 2.0.0-b3
+---------------
+* Added new [Saved Connections](https://github.com/Colorado4Wheeler/Mac-Commander/wiki/Saved-Connections) option in the menu to save commonly used credentials
+* Added ability for all forms to utilize the new [Saved Connections](https://github.com/Colorado4Wheeler/Mac-Commander/wiki/Saved-Connections) data
+* Added sleep, reboot and shutdown via SSH as available commands
+* Added software updates as a command
+* Removed all credential field defaults
+* Fixed bug in Command action that would cause an error when trying to quit an app
+
+
+Previous Release Notes
+==========
+
 Version 2.0.0-b2
 ---------------
 * Added Plugin Store update check
 * Added Custom AppleScript action with a full AppleScript editor built in so you can write scripts on the fly and run them (or copy and paste them, up to you)
 * Cleaned up action list with separators to delineate the commands more
 
-
-Previous Release Notes
-==========
 
 Version 2.0.0-b1
 ---------------
@@ -32,7 +43,7 @@ Known Issues As Of The Most Current Release
 ---------------
 
 * About link for devices point to the generic Indigo page
-* Using special characters in your password will fail, such as backslash, apostrophe, double quotes
+* Using special characters in your password will fail, such as backslash, apostrophe and double quotes
 
 Wish List
 ---------------
