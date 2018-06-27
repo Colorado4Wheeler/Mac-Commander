@@ -26,6 +26,7 @@ import glob
 import re
 import base64
 import thread
+from xml.etree import cElementTree
 
 # Third Party Modules
 sys.path.append('lib/psutil')
@@ -56,7 +57,7 @@ class Plugin(indigo.PluginBase):
 		
 		self.next_version_check = datetime.now() + timedelta(days=7)
 		version.version_check(self)
-		
+				
 		#indigo.server.log(u'{}'.format(psutil.cpu_percent()))
 		
 	###
@@ -78,6 +79,7 @@ class Plugin(indigo.PluginBase):
 			if dev.pluginId == "com.eps.indigoplugin.mac-commander":
 				self.configurePolling (dev, dev.ownerProps)
 				self.configurePollingMusic (dev, dev.ownerProps) #1.1.0
+
 	
 	###
 	def shutdown(self):
@@ -392,6 +394,152 @@ class Plugin(indigo.PluginBase):
 			self.logger.error (ex.stack_trace(e))
 			
 		return listData		
+		
+################################################################################
+# FIND EMBEDDED APPLESCRIPT
+################################################################################		
+
+	###
+	def getMenuActionConfigUiValues(self, menuId):
+		valuesDict = indigo.Dict()
+		errorMsgDict = indigo.Dict()
+
+		if menuId == 'findApplescript':
+			# Set the default DB
+			dbdir = '{}/Databases/'.format(indigo.server.getInstallFolderPath())
+			dbs = glob.glob(dbdir + "*.indiDb")
+			for db in dbs:
+				valuesDict['database'] = db.replace(dbdir, "").replace(".indiDb", "")
+				break
+				
+		return (valuesDict, errorMsgDict)		
+
+	###
+	def get_databases (self, filter="", valuesDict=None, typeId="", targetId=0):
+		"""
+		Read database folder for all databases and return them as a list.
+		"""
+		
+		try:
+			retList = []
+			
+			dbdir = '{}/Databases/'.format(indigo.server.getInstallFolderPath())
+			dbs = glob.glob(dbdir + "*.indiDb")
+			for db in dbs:
+				dbname = db.replace(dbdir, "").replace(".indiDb", "")
+				retList.append ((dbname, dbname))
+				
+			return retList
+			
+		except Exception as e:
+			self.logger.error(unicode(e))	
+		
+	###
+	def find_applescript (self):
+		try:				
+			self.logger.info ('### PLEASE WAIT WHILE YOUR DATABASE IS EXAMINED FOR EMBEDDED APPLESCRIPT, THIS MAY TAKE A MOMENT ###')
+			
+			# Make copy of the DB
+			from shutil import copyfile
+			
+			dbdir = '{}/Databases/'.format(indigo.server.getInstallFolderPath())
+			src = u'{}{}.indiDb'.format(dbdir, indigo.server.getDbName())
+			dst = u'{}{}-mccopy.indiDb'.format(dbdir, indigo.server.getDbName())
+			
+			copyfile(src, dst)
+			
+			# Parse the DB
+			output = '\nThe following items have an embedded AppleScript:\n\n'
+			dbdir = '{}/Databases/'.format(indigo.server.getInstallFolderPath())
+			xml = cElementTree.iterparse(u'{}{}-mccopy.indiDb'.format(dbdir, indigo.server.getDbName()))
+			for event, elem in xml:
+				type = ''
+				folderId = ''
+				id = ''
+				name = ''
+				script = ''
+				isas = False
+			
+				if elem.tag == "ActionGroup":
+					type = 'Action Group'
+
+					for ActionGroup in elem:
+						if ActionGroup.tag == 'FolderID': folderId = ActionGroup.text
+						if ActionGroup.tag == 'Name': name = ActionGroup.text
+						if ActionGroup.tag == 'ID': id = ActionGroup.text
+					
+						if ActionGroup.tag == 'ActionSteps':
+							for ActionSteps in ActionGroup:
+								if ActionSteps.tag == 'Action':
+									for Action in ActionSteps:
+										if Action.tag == 'AppleScriptSCPT':
+											isas = True
+										if isas and Action.tag == 'ScriptSource':
+											script = Action.text
+										
+				if elem.tag == "Trigger":
+					type = 'Trigger'
+				
+					for Trigger in elem:
+						if Trigger.tag == 'FolderID': folderId = Trigger.text
+						if Trigger.tag == 'Name': name = Trigger.text
+						if Trigger.tag == 'ID': id = Trigger.text	
+					
+						if Trigger.tag == 'ActionGroup':			
+							for ActionGroup in Trigger:
+								if ActionGroup.tag == 'FolderID': folderId = ActionGroup.text
+								if ActionGroup.tag == 'Name': name = ActionGroup.text
+								if ActionGroup.tag == 'ID': id = ActionGroup.text
+					
+								if ActionGroup.tag == 'ActionSteps':
+									for ActionSteps in ActionGroup:
+										if ActionSteps.tag == 'Action':
+											for Action in ActionSteps:
+												if Action.tag == 'AppleScriptSCPT':
+													isas = True
+												if isas and Action.tag == 'ScriptSource':
+													script = Action.text
+												
+				if elem.tag == "TDTrigger":
+					type = 'Schedule'
+				
+					for Schedule in elem:
+						if Schedule.tag == 'FolderID': folderId = Schedule.text
+						if Schedule.tag == 'Name': name = Schedule.text
+						if Schedule.tag == 'ID': id = Schedule.text	
+					
+						if Schedule.tag == 'ActionGroup':			
+							for ActionGroup in Schedule:
+								if ActionGroup.tag == 'FolderID': folderId = ActionGroup.text
+								if ActionGroup.tag == 'Name': name = ActionGroup.text
+								if ActionGroup.tag == 'ID': id = ActionGroup.text
+					
+								if ActionGroup.tag == 'ActionSteps':
+									for ActionSteps in ActionGroup:
+										if ActionSteps.tag == 'Action':
+											for Action in ActionSteps:
+												if Action.tag == 'AppleScriptSCPT':
+													isas = True
+												if isas and Action.tag == 'ScriptSource':
+													script = Action.text												
+						
+				if isas and name != '':
+					#item = base64.b64decode(script)
+			
+					#indigo.server.log(u'{}: {} - \n{}'.format(type, name, script))
+					#indigo.server.log(u'{}: {}'.format(type, name))
+					output += u'{}: {}\n'.format(type, name)
+				
+					#break
+			
+			self.logger.info(u'{}'.format(output))
+					
+			# Remove our DB copy
+			os.remove(dst)
+					
+		except Exception as e:
+			self.logger.error (ex.stack_trace(e))			
+		
 		
 ################################################################################
 # MAC COMMAND RELAY DEVICE

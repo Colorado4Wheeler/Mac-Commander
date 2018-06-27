@@ -1,6 +1,13 @@
 Current Release Notes
 ==========
 
+Version 2.0.0-b4
+---------------
+* Added new plugin menu option [Find Embedded AppleScript](https://github.com/Colorado4Wheeler/Mac-Commander/wiki/Plugin-Menu-Commands#find-embedded-applescript) in Indigo to locate all Indigo items that have an embedded ApplesScript so you can get those functions reprogrammed in Python
+
+Previous Release Notes
+==========
+
 Version 2.0.0-b3
 ---------------
 * Added new [Saved Connections](https://github.com/Colorado4Wheeler/Mac-Commander/wiki/Saved-Connections) option in the menu to save commonly used credentials
@@ -9,10 +16,6 @@ Version 2.0.0-b3
 * Added software updates as a command
 * Removed all credential field defaults
 * Fixed bug in Command action that would cause an error when trying to quit an app
-
-
-Previous Release Notes
-==========
 
 Version 2.0.0-b2
 ---------------

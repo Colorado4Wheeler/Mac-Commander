@@ -16,6 +16,7 @@ While version 1.1.0 and prior required having a Mac Commander device in Indigo, 
 Here are the things you can do with Mac Commander:
 
 * Create a relay device (on/off) where both On and Off can perform any of the things on this list independently
+* Perform any of the things on this list as an acton with **zero** devices required, everything can be performed via an action
 * Run an application on any Mac in any network (so long as you have access and permissions)
 * Quit an application on any Mac in any network
 * Display a notification message on any Mac in any network
@@ -28,6 +29,7 @@ Here are the things you can do with Mac Commander:
 * Play, Pause, Start and Stop iTunes on any Mac on any network
 * Run a saved AppleScript .scpt file saved on your Indigo computer
 * Run a custom written AppleScript code from your Indigo computer (what it does could be directed anywhere)
+* **Find all embedded AppleScript scripts that are on any Indigo schedule, action group or trigger so you can get those migrated to Python**
 
 ## Requirements
 

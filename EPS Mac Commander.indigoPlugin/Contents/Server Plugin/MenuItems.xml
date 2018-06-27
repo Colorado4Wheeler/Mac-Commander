@@ -84,4 +84,11 @@
 			
 		</ConfigUI>
     </MenuItem>
+    
+    <MenuItem id="sep_2"/>
+    
+    <MenuItem id="findApplescript">
+    	<Name>Find Embedded AppleScript in Indigo</Name>
+    	<CallbackMethod>find_applescript</CallbackMethod>   
+    </MenuItem>    
 </MenuItems>
