@@ -1,12 +1,16 @@
 Current Release Notes
 ==========
 
-Version 2.0.0-b4
+Version 2.0.0-b5
 ---------------
-* Added new plugin menu option [Find Embedded AppleScript](https://github.com/Colorado4Wheeler/Mac-Commander/wiki/Plugin-Menu-Commands#find-embedded-applescript) in Indigo to locate all Indigo items that have an embedded ApplesScript so you can get those functions reprogrammed in Python
+* Fixed error loading library that was preventing the plugin from fully initializing
 
 Previous Release Notes
 ==========
+
+Version 2.0.0-b4
+---------------
+* Added new plugin menu option [Find Embedded AppleScript](https://github.com/Colorado4Wheeler/Mac-Commander/wiki/Plugin-Menu-Commands#find-embedded-applescript) in Indigo to locate all Indigo items that have an embedded ApplesScript so you can get those functions reprogrammed in Python
 
 Version 2.0.0-b3
 ---------------

@@ -20,6 +20,7 @@ import sys
 import time
 import datetime
 from datetime import datetime, timedelta, time
+import subprocess
 from subprocess import Popen, PIPE
 import applescript
 import glob
@@ -27,12 +28,13 @@ import re
 import base64
 import thread
 from xml.etree import cElementTree
+#import psutil
 
 # Third Party Modules
-sys.path.append('lib/psutil')
+#sys.path.append('lib/psutil')
 import indigo
 from lib.pexpect import pxssh
-import psutil
+
 
 # Package Modules
 from lib.eps import ex
@@ -75,10 +77,14 @@ class Plugin(indigo.PluginBase):
 			self.logger.info (u"AppleScript script path set to {}".format(self.CONFIGDIR))
 		
 		# Run through all our devices and set up polling
-		for dev in indigo.devices:
-			if dev.pluginId == "com.eps.indigoplugin.mac-commander":
+		for dev in indigo.devices.iter("self"):
+			if dev.pluginId == "com.eps.indigoplugin.mac-commander" and (dev.deviceTypeId =='maccmd' or dev.deviceTypeId =='epsmc') :
 				self.configurePolling (dev, dev.ownerProps)
 				self.configurePollingMusic (dev, dev.ownerProps) #1.1.0
+				
+			elif dev.pluginId == "com.eps.indigoplugin.mac-commander" and dev.deviceTypeId =='computer':
+				#thread.start_new_thread (self.sample_computer_data, (dev,))
+				pass
 
 	
 	###
@@ -99,9 +105,208 @@ class Plugin(indigo.PluginBase):
 				if self.next_version_check < datetime.now():
 					version.version_check(self)
 					
+				for dev in indigo.devices.iter("self"):	
+					if dev.deviceTypeId == 'computer' and dev.pluginProps['refresh'] != '0':
+						last = datetime.strptime(dev.states['last_sample'], "%Y-%m-%d %H:%M:%S")
+						next = last + timedelta(seconds=int(dev.pluginProps['refresh']))
+						if datetime.now() > next: thread.start_new_thread (self.sample_computer_data, (dev,))
+						
+					
 		except self.StopThread:
 			pass	# Optionally catch the StopThread exception and do any needed cleanup.
+
+
+	###
+	def deviceStartComm (self, dev):
+		dev.stateListOrDisplayStateIdChanged() # Commit any state changes
+
+################################################################################
+# COMPUTER
+################################################################################			
+	
+	###
+	def sample_computer_profile (self, dev):
+		try:
+			regex = re.compile(r'''
+				[\S]+:                # a key (any word followed by a colon)
+				(?:
+				\s                    # then a space in between
+					(?!\S+:)\S+       # then a value (any word not followed by a colon)
+				)+                    # match multiple values if present
+				''', re.VERBOSE)
+				
+			if dev.pluginProps['localhost']:
+				cmd = [ '/usr/sbin/system_profiler', 'SPHardwareDataType', 'SPSoftwareDataType']
+				profiler = subprocess.Popen( cmd, stdout=subprocess.PIPE ).communicate()[0]
+				hardwareraw = regex.findall(profiler)
+				indigo.server.log(unicode(hardwareraw))
+				
+				#cmd = [ '/usr/sbin/system_profiler', 'SPSoftwareDataType']
+				#profiler = subprocess.Popen( cmd, stdout=subprocess.PIPE ).communicate()[0]
+				#softwareraw = regex.findall(profiler)
+				
+			else:
+				s = self.ssh (dev.pluginProps, "Sampling")
+				if s:		
+					s.sendline ('pwd')
+					s.sendline ('echo "#! /usr/bin/env python" > test.py')
+					s.sendline ('sudo /usr/sbin/system_profiler SPHardwareDataType SPSoftwareDataType')
+					s.prompt(timeout=1)
+					profiler = s.before
+					
+					hardwareraw = regex.findall(profiler)
+					indigo.server.log(unicode(profiler))
+					
+					s.expect('[#\$] ')
+					
+					#s.sendline ('echo "#! /usr/bin/env python" > test.py')
+					s.prompt(timeout=1)
 			
+			profile = {}
+			
+			for i in range(0, len(hardwareraw)):
+				value = hardwareraw[i].split(": ")
+				if i == 0: profile['Model Name'] = value[1]
+				if i == 1: profile['Model ID'] = value[1]
+				if i == 2: profile['CPU'] = value[1]
+				if i == 3: profile['CPU Speed'] = value[1]
+				if i == 4: profile['Processors'] = int(value[1])
+				if i == 5: profile['Cores'] = int(value[1])
+				if i == 8: profile['Memory'] = value[1]
+				if i == 11: profile['Serial Number'] = value[1]
+				if i == 13: profile['macOS Version'] = value[1]
+				if i == 14: profile['macOS Detail'] = value[1]
+				if i == 15: profile['Volume'] = value[1]
+				if i == 17: profile['Computer Name'] = value[1]
+				
+			# Extras
+			profile['CPU Utilization'] = psutil.cpu_percent()
+			
+			mem = psutil.virtual_memory()
+			profile['Memory Utilization'] = mem.percent
+				
+			return profile
+		
+		except Exception as e:
+			self.logger.error (ex.stack_trace(e))
+
+
+	###
+	def sample_computer_data (self, dev):
+		try:
+			keyValueList = []
+			
+			profile = self.sample_computer_profile(dev)
+			#indigo.server.log(unicode(profile))
+			
+			keyValueList.append({'key':'name', 'value':profile['Computer Name']})
+			
+			keyValueList.append({'key':'model', 'value':u'{} ({})'.format(profile['Model Name'], profile['Model ID'])})
+			keyValueList.append({'key':'cpu_model', 'value':profile['CPU']})
+			keyValueList.append({'key':'cpu_speed', 'value':profile['CPU Speed']})
+			keyValueList.append({'key':'serial', 'value':profile['Serial Number']})
+			
+			keyValueList.append({'key':'cpu', 'value':profile['CPU Utilization']})
+			keyValueList.append({'key':'cpu_count', 'value':profile['Processors']})	
+			keyValueList.append({'key':'cpu_cores', 'value':profile['Cores']})
+			
+			mem = psutil.virtual_memory()
+			keyValueList.append({'key':'memory', 'value':mem.total  / 1024 / 1024})
+			keyValueList.append({'key':'memory_available', 'value':mem.available / 1024 / 1024})
+			keyValueList.append({'key':'memory_percent', 'value':profile['Memory Utilization']})
+			
+			
+			disk = psutil.disk_usage('/')
+			keyValueList.append({'key':'disk', 'value':disk.total  / 1024 / 1024})
+			keyValueList.append({'key':'disk_available', 'value':disk.free  / 1024 / 1024})
+			keyValueList.append({'key':'disk_percent', 'value':disk.percent})
+			
+			# Not supported in the 1.x that comes with macOS, need to wait until a newer version is out
+			#temps = psutil.sensors_temperatures()
+			#fans = psutil.sensors_fans()
+			#batt = psutil.sensors_battery()
+			
+			boot = datetime.fromtimestamp(psutil.boot_time()).strftime("%Y-%m-%d %H:%M:%S")
+			keyValueList.append({'key':'last_boot', 'value':boot})
+			
+			cmd = [ 'sw_vers', '-productVersion']
+			ver = subprocess.Popen( cmd, stdout=subprocess.PIPE ).communicate()[0]
+			ver = ver.replace("\n","")
+			keyValueList.append({'key':'macOS', 'value':ver})
+			
+			keyValueList.append({'key':'last_sample', 'value':datetime.now().strftime("%Y-%m-%d %H:%M:%S")})
+			
+			#/usr/sbin/system_profiler SPHardwareDataType | fgrep 'Serial' | awk '{print $NF}'
+			
+			if dev.pluginProps['state'] == 'cpu': keyValueList.append({'key':'sensorValue', 'value':profile['CPU Utilization'], 'uiValue': u'{}%'.format(profile['CPU Utilization'])})
+			if dev.pluginProps['state'] == 'memory_percent': keyValueList.append({'key':'sensorValue', 'value':profile['Memory Utilization'], 'uiValue': u'{}%'.format(profile['Memory Utilization'])})
+				
+			props = dev.pluginProps
+			props['address'] = u'CPU: {}% | Mem: {}%'.format(profile['CPU Utilization'], profile['Memory Utilization'])
+			dev.replacePluginPropsOnServer (props)
+			
+			if keyValueList: dev.updateStatesOnServer(keyValueList)
+			
+		except Exception as e:
+			self.logger.error (ex.stack_trace(e))
+			
+	###
+	def list_computer_info (self, filter="", valuesDict=None, typeId="", targetId=0): 
+		"""
+		Return the list of computer stats.
+		"""
+		
+		try:
+			listData = []
+			if targetId == 0: return listData
+			
+			dev = indigo.devices[targetId]
+			
+			listData.append (('name', 'Name:\t\t\t\t{}'.format(dev.states['name'])))
+			listData.append (('macOS', 'macOS Version:\t\t{}'.format(dev.states['macOS'])))
+			listData.append (('model', 'Model:\t\t\t\t{}'.format(dev.states['model'])))
+			listData.append (('cpu_model', 'CPU Info:\t\t\t{} {}'.format(dev.states['cpu_model'], dev.states['cpu_speed'])))
+			#listData.append (('serial', 'Serial Number:\t\t{}'.format(dev.states['serial'])))
+			listData.append (('serial', 'Serial Number:\t\t{}'.format('XXXXXXXXXX')))
+						
+			listData.append (('cpu', 'CPU Utilization:\t\t{}%'.format(dev.states['cpu'])))
+			listData.append (('cpu_count', 'CPU Count:\t\t\t{}'.format(dev.states['cpu_count'])))
+			listData.append (('cpu_cores', 'CPU Cores:\t\t\t{}'.format(dev.states['cpu_cores'])))
+			
+			listData.append (('memory', 'Memory:\t\t\t\t{} MB'.format("{:,}".format(dev.states['memory']))))
+			listData.append (('memory_available', 'Memory Available:\t\t{} MB'.format("{:,}".format(dev.states['memory_available']))))
+			listData.append (('memory_percent', 'Memory Used:\t\t{}%'.format(dev.states['memory_percent'])))
+			
+			listData.append (('disk', 'Pri Drive Capacity:\t\t{} MB'.format("{:,}".format(dev.states['disk']))))
+			listData.append (('disk_available', 'Pri Drive Available:\t{} MB'.format("{:,}".format(dev.states['disk_available']))))
+			listData.append (('disk_percent', 'Pri Drive Used:\t\t{}%'.format(dev.states['disk_percent'])))
+			
+			listData.append (('last_boot', 'Last Reboot:\t\t\t{}'.format(dev.states['last_boot'])))
+			
+		except Exception as e:
+			self.logger.error (ex.stack_trace(e))
+			
+		return listData	
+		
+	###
+	def list_computer_states (self, filter="", valuesDict=None, typeId="", targetId=0): 
+		"""
+		Return the list of computer states.
+		"""
+		
+		try:
+			listData = []
+			
+			listData.append (('cpu', "CPU Usage"))
+			listData.append (('memory_available', "Memory Available"))
+			listData.append (('memory_percent', "Memory Used %"))
+			listData.append (('disk_available', "Disk Available"))
+			listData.append (('disk_percent', "Disk Used %"))
+			
+		except Exception as e:
+			self.logger.error (ex.stack_trace(e))
+			
+		return listData				
 			
 ################################################################################
 # INDIGO DEVICE METHODS
@@ -114,14 +319,15 @@ class Plugin(indigo.PluginBase):
 			dev = indigo.devices[devId]
 		
 			# While we are here add this device to polling if that is enabled
-			self.configurePolling (dev, valuesDict)
-			self.configurePollingMusic (dev, valuesDict)
-			#indigo.server.log(unicode(self.itunespollinglist))
-		
-			return (True, valuesDict, errorDict)	
+			if typeId == 'maccmd' or typeId == 'epsmc':
+				self.configurePolling (dev, valuesDict)
+				self.configurePollingMusic (dev, valuesDict)
+				#indigo.server.log(unicode(self.itunespollinglist))
 		
 		except Exception as e:
 			self.logger.error (ex.stack_trace(e))	
+			
+		return (True, valuesDict, errorDict)	
 		
 	###
 	def actionControlDevice(self, action, dev):
@@ -152,9 +358,14 @@ class Plugin(indigo.PluginBase):
 			errorsDict = indigo.Dict()
 			
 			# Set new device defaults
-			if not 'credentials' in valuesDict: valuesDict['credentials'] = 'manual'
-			if not 'onCommand' in valuesDict: valuesDict['onCommand'] = 'runapp'
-			if not 'offCommand' in valuesDict: valuesDict['offCommand'] = 'runapp'
+			if typeId == 'maccmd':
+				if not 'credentials' in valuesDict: valuesDict['credentials'] = 'manual'
+				if not 'onCommand' in valuesDict: valuesDict['onCommand'] = 'runapp'
+				if not 'offCommand' in valuesDict: valuesDict['offCommand'] = 'runapp'
+				
+			elif typeId == 'computer':
+				if not 'state' in valuesDict: valuesDict['state'] = 'cpu'
+				if not 'credentials' in valuesDict: valuesDict['credentials'] = 'manual'
 			
 		except Exception as e:
 			self.logger.error (ex.stack_trace(e))	
